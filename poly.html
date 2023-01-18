@@ -1,0 +1,811 @@
+<html onkeydown="keyDownEvent(event)" onmouseup="leaveController(event)">
+    <head>
+        <script>
+
+            var globalDefine = {
+                skipTime : 5,
+                oneFrame : 0.033,
+            }
+
+            window.onload = function(){
+                console.log("CODE LOADED!!");
+
+                document.querySelector("html").onfullscreenchange = function(){
+                    detectFullScreen();
+                }
+            }
+
+            function viewInfo(){
+                document.querySelector("#infoSection").classList.add('viewInfo');
+
+                setTimeout(()=>{
+                    document.querySelector("#infoSection").classList = "";
+                }, 2000);
+            }
+
+            function leaveController(event){
+                controller.checkVolumControlOff(event);
+                vidController.checkVidControlOff(event);
+            }
+
+            function keyDownEvent(event){
+                let keyDown = event.key;
+
+                if(document.activeElement.tagName == "INPUT"){
+                    keyDown = "A";
+                }
+
+                switch(keyDown){
+                    case 'Enter':{
+                        controller.videoPauseStart();
+                        break;
+                    }
+                    case 'm':{
+                        controller.videoMuteUnmute();
+                        break;
+                    }
+                    case 'f':{
+                        controller.fullscreen();
+                        break;
+                    }
+                    case " ":{
+                        controller.videoPauseStart();
+                        break;
+                    }
+                    case "ArrowRight":{
+                        document.querySelector("#videoPlayer").currentTime += globalDefine.skipTime;
+                        break;
+                    }
+                    case "ArrowLeft":{
+                        document.querySelector("#videoPlayer").currentTime -= globalDefine.skipTime;
+                        break;
+                    }
+                    case "ArrowUp":{
+                        document.querySelector("#videoPlayer").playbackRate += 0.1;
+                        document.querySelector("#speedInfo").textContent = "x"+document.querySelector("#videoPlayer").playbackRate.toFixed(1);
+                        viewInfo();
+
+                        break;
+                    }
+                    case "ArrowDown":{
+                        document.querySelector("#videoPlayer").playbackRate -= 0.1;
+                        document.querySelector("#speedInfo").textContent = "x"+document.querySelector("#videoPlayer").playbackRate.toFixed(1);
+                        viewInfo();
+
+                        break;
+                    }
+                    case ".":{
+                        document.querySelector("#videoPlayer").currentTime += globalDefine.oneFrame;
+                        break;
+                    }
+                    case ",":{
+                        document.querySelector("#videoPlayer").currentTime -= globalDefine.oneFrame;
+                        break;
+                    }
+                }
+            }
+
+
+            function onMousePoint(event){
+                let xCord = 0;
+
+                xCord = event.screenX;
+
+                if((xCord > 100) && (xCord < 500)){
+                    console.log("SUC");
+                }
+            }
+
+            function onFileDetected(event){
+                console.log(event.target.files[0]);
+
+                if(isVideo(event.target.files[0]) != "VIDEO"){
+                    selectAnotherFile();
+
+                    return null;
+                }
+
+                let media = URL.createObjectURL(event.target.files[0]);
+
+                document.querySelector("#videoPlayer").src = media;
+
+                document.querySelector("#selectField > p").textContent = "Successful!";
+                setTimeout(()=>{
+                    document.querySelector("#wrapper").classList = "A2";
+                    timeTransition();
+                }, 1000);
+                
+
+            }
+
+            function selectAnotherFile(){
+                document.querySelector("#selectField > p").textContent = "파일이 영상이 아닙니다";
+                document.querySelector("#selectField > p").classList.add("ERRORtext");
+                setTimeout(()=>{
+                    document.querySelector("#selectField > p").textContent = "영상을 선택하세요";
+                    document.querySelector("#selectField > p").classList.remove("ERRORtext");
+                }, 3000);
+            }
+
+
+            function isVideo(file){
+
+                if(file === undefined){
+                    return "UndefinedException";
+                }
+                if(file === null){
+                    return "NullException";
+                }
+
+                let fileType = null;
+
+                try{
+                    fileType = file.type.split("/")[0];
+
+                    if(fileType == "video"){
+                        return "VIDEO";
+                    }
+                }catch(e){
+                    console.error(e);
+
+                    return "UnexpectedType";
+                }
+
+                
+            }
+
+            function detectFullScreen(){
+                if(document.fullscreen){
+                    document.querySelector("#videoPanel").classList.add("fullS");
+                }else{
+                    document.querySelector("#videoPanel").classList.remove("fullS");
+                }
+            }
+
+            function preventRight(event){
+                event.preventDefault();
+            }
+
+            function timeSeeker(event){
+
+                timeTransition(event);
+                
+                let realLength = parseFloat(getComputedStyle(document.querySelector("#hiddenController > div:nth-child(3)")).width.split("px")[0]);
+                let timeLength = event.layerX;
+
+                document.querySelector("#videoPlayer").currentTime = document.querySelector("#videoPlayer").duration * (timeLength/realLength);
+            }
+
+            function timeTransition(event){
+
+                let playTime = document.querySelector("#videoPlayer").currentTime;
+
+                let curTime = document.querySelector("#videoPlayer").duration;
+
+                let curSec = document.querySelector("#videoPlayer").duration%60;
+                let curMin = curTime/60;
+
+                let curHour = 0;
+
+                let percentage = playTime / curTime;
+
+                document.querySelector("#hiddenController > div:nth-child(4)").style.width = (90 * percentage) + "%";
+
+                let playSec = playTime%60;
+                let playMin = (playTime/60)%60;
+
+                let playHour = 0;
+
+                playHour = (playTime/60)/60;
+
+                if(curMin/60 >= 1){
+                    curHour = Math.floor(curMin/60);
+                    document.querySelector("#timeChecker").textContent = Math.floor(playHour)+":"+Math.floor(playMin)+":"+Math.floor(playSec)+" | " + Math.floor(curHour) + ":"+Math.floor(curMin%60)+":"+Math.floor(curTime%60);
+                }else{
+                    document.querySelector("#timeChecker").textContent = Math.floor(playHour)+":"+Math.floor(playMin)+":"+Math.floor(playSec)+" | "+Math.floor(curMin%60)+":"+Math.floor(curTime%60);
+                }
+            }
+
+            function timeCheckerFunction(event){
+                let realLength = parseFloat(getComputedStyle(document.querySelector("#hiddenController > div:nth-child(3)")).width.split("px")[0]);
+                let timeLength = event.layerX;
+
+                let curTime = document.querySelector("#videoPlayer").duration * (timeLength/realLength);
+                let curMin = curTime / 60;
+                let curHour = 0;
+                if(curMin/60 >= 1){
+                    curHour = Math.floor(curMin/60);
+                    document.querySelector("#viewTimeChecker").textContent = Math.floor(curHour) + ":"+Math.floor(curMin%60)+":"+Math.floor(curTime%60);
+                }else{
+                    document.querySelector("#viewTimeChecker").textContent = Math.floor(curMin%60)+":"+Math.floor(curTime%60);
+                }
+                
+
+            }
+
+            let controller = {
+                fullscreen : function(){
+                    if(document.fullscreen){
+                        document.exitFullscreen();
+                        document.querySelector("#controlSection > div:nth-child(3) > div:nth-child(1)").textContent = "📺";
+                    }else{
+                        document.documentElement.requestFullscreen();
+                        document.querySelector("#controlSection > div:nth-child(3) > div:nth-child(1)").textContent = "❌";
+                    }
+                    
+                },
+                videoPauseStart : function(){
+                    if(document.querySelector("#videoPlayer").paused){
+                        document.querySelector("#videoPlayer").play();
+                        document.querySelector("#controlSection > div:nth-child(1) > div:nth-child(1)").textContent = "🔥";
+
+                        if(this.isToggling){
+                            document.querySelector("#playPauseSection").style.opacity = "100%";
+                            document.querySelector("#PPICO").classList = "playICO";
+
+                            setTimeout(()=>{
+                                document.querySelector("#playPauseSection").style.opacity = "0%";
+                            }, 1000);
+                        }
+
+                    }else{
+                        document.querySelector("#videoPlayer").pause();
+                        document.querySelector("#controlSection > div:nth-child(1) > div:nth-child(1)").textContent = "💧";
+
+                        if(this.isToggling){
+                            document.querySelector("#playPauseSection").style.opacity = "100%";
+                            document.querySelector("#PPICO").classList = "pauseICO";
+
+                            setTimeout(()=>{
+                                document.querySelector("#playPauseSection").style.opacity = "0%";
+                            }, 1000);
+                        }
+                    }
+                },
+                videoMuteUnmute : function(){
+
+                    //let totH = parseInt(getComputedStyle(document.querySelector("#volumProgress")).height.split("px")[0]);
+
+                    if(document.querySelector("#videoPlayer").volume == 0){
+                        document.querySelector("#videoPlayer").volume = 1;
+                        document.querySelector("#controlSection > div:nth-child(1) > div:nth-child(2)").textContent = "🔊";
+                        document.querySelector("#realVolum").style.height = "100%";
+                        //document.querySelector("#volumProgress").style.boxShadow = "inset 0px -"+totH+"px 0px 0px #5a5a5a";
+                    }else{
+                        document.querySelector("#videoPlayer").volume = 0;
+                        document.querySelector("#controlSection > div:nth-child(1) > div:nth-child(2)").textContent = "🔈";
+                        //document.querySelector("#volumProgress").style.boxShadow = "inset 0px -0px 0px 0px #5a5a5a";
+
+                        document.querySelector("#realVolum").style.height = "0%";
+                    }
+                },
+                volumeControl : function(event){
+
+                    let totH = parseInt(getComputedStyle(document.querySelector("#volumProgress")).height.split("px")[0]);
+
+                    let clkH = totH - event.offsetY;
+
+                    document.querySelector("#videoPlayer").volume = clkH/totH;
+
+                    document.querySelector("#realVolum").style.height = (100 * (clkH/totH))+"%";
+
+                    
+
+                },
+                exitVideo : function(event){
+                    document.querySelector("#videoPlayer").src = "";
+                    document.querySelector("#wrapper").classList = "A1";
+                    document.querySelector("#selectField > p").textContent = "영상을 선택하세요";
+                    document.querySelector("#selectField > input[type=file]").value = "";
+                },
+                applyMultiple : function(event){
+                    let multi = 0;
+
+                    if(event.key == "Enter"){
+                        try{
+                            multi = parseFloat(event.target.value);
+
+                            document.querySelector("#videoPlayer").playbackRate = multi;
+                            document.querySelector("#speedInfo").textContent = "x"+multi;
+                            viewInfo();
+                        }catch(e){
+                            alert("ERROR");
+                        }
+                    }
+
+
+                },
+                fixController : function(event){
+
+                    if(document.querySelector("#controlSection").classList == "fixed"){
+                        document.querySelector("#controlSection").classList = "";
+                        document.querySelector("#controlSection > div:nth-child(2) > div:nth-child(1)").textContent = "📌";
+                    }else{
+                        document.querySelector("#controlSection").classList = "fixed";
+                        document.querySelector("#controlSection > div:nth-child(2) > div:nth-child(1)").textContent = "🎈";
+                    }
+                },
+                checkVolumControlInteract : function(event){
+                    this.isVolumControlling = true;
+                },
+                checkVolumControlOff: function(event){
+                    this.isVolumControlling = false;
+                },
+                checkVolumControlLeave : function(event){
+                    this.isVolumControlling = false;
+                },
+                checkVolumPosition : function(event){
+                    if(this.isVolumControlling){
+                        this.volumeControl(event);
+                    }
+                },
+                toggleNofity : function(event){
+                    if(this.isToggling){
+                        this.isToggling = false;
+                        document.querySelector("#controlSection > div:nth-child(6) > div:nth-child(1)").textContent = "💬";
+                    }else{
+                        this.isToggling = true;
+                        document.querySelector("#controlSection > div:nth-child(6) > div:nth-child(1)").textContent = "👁‍🗨";
+                    }
+                },
+                isVolumControlling : false,
+                isToggling : true,
+            }
+
+
+
+            let vidController = {
+                checkVidControlInteract : function(event){
+
+                    this.isControlling = true;
+
+                },
+                checkVidControlOff : function(event){
+                    this.isControlling = false;
+                },
+                timelinePointerChanged : function(event){
+                    timeCheckerFunction(event);
+                    if(this.isControlling){
+                        timeSeeker(event);
+                    }
+                },
+
+
+                applySkipTime : function(event){
+                    let skipTime = 0;
+
+                    if(event.key == "Enter"){
+                        try{
+                            skipTime = parseFloat(event.target.value);
+
+                            globalDefine.skipTime = skipTime;
+                            document.querySelector("#skipInfo").textContent = skipTime+"s";
+                            viewInfo();
+                        }catch(e){
+                            alert("ERROR");
+                        }
+                    }
+                },
+
+
+                isControlling : false,
+            }
+
+
+        </script>
+        <style>
+
+            #controlSection.fixed{
+                opacity: 100%;
+            }
+            html, body{
+                height: 100vh;
+                width: 100vw;
+
+                margin: 0px;
+
+                user-select: none;
+                overflow: hidden;
+            }
+
+            div#wrapper{
+
+                transition-duration: 2s;
+
+                position: absolute;
+
+                background-color: white;
+
+                display: flex;
+
+
+            }
+
+            .A1{
+                left: 0%;
+            }
+            .A2{
+                left: -100%;
+            }
+            .A3{
+                left: -200%;
+            }
+            div.fullPanel{
+                height: 100vh;
+                width: 100vw;
+
+                background-color: rgba(0, 0, 0, 0.147);
+            }
+
+            div#selectField > p{
+                font-size: 5vh;
+
+                margin: 0px;
+                margin-left: 3vw;
+            }
+
+            #selectField{
+                
+                height: 50vh;
+                width: 50vw;
+
+                margin: auto;
+                margin-top: 25vh;
+
+                background-color: white;
+
+                box-shadow: 0px 0px 30px 0px #0000002e;
+
+                border-radius: 10px;
+            }
+
+            #videoPlayer{
+                width: 100%;
+                height: 100%;
+            }
+
+            #selectorText{
+                height: 5vh;
+            }
+
+            input[type="file"]{
+                margin-top: 2vh;
+                margin-left: 3vw;
+            }
+
+            input[type="text"]{
+                width: 100%; height: 3vh;
+
+                border: 0px;
+                background-color: #dddddd;
+                outline: none;
+                text-align: center;
+            }
+
+            p.ERRORtext{
+
+                transition-duration: 0.2s;
+                color: red;
+            }
+
+            div#videoPanel{
+
+                transition-duration: 0.5s;
+
+                height: 90vh;
+                width: fit-content;
+
+                background-color: #c7c7c7;
+
+                border-radius: 10px;
+
+                box-shadow: 0px 0px 30px 0px #0000002e;
+
+                margin: auto;
+                margin-top: 5vh;
+
+                overflow: hidden;
+            }
+
+            div#videoPanel.fullS{
+                height: 100vh;
+                margin-top: 0px;
+            }
+
+            .A1 > #vidViewer > #controlSection{
+                display: none;
+            }
+
+            .A2 > #vidViewer > #controlSection.fixed{
+                opacity: 5%;
+            }
+
+            .A2 > #vidViewer > #controlSection:hover{
+                opacity: 100%;
+            }
+
+            div#controlSection{
+
+                z-index: 1000;
+
+                transition-duration: 0.7s;
+
+                height: 50vh;
+                width: 5vw;
+
+                background-color: white;
+
+                box-shadow: 0px 0px 30px 0px #0000002e;
+
+                position: fixed;
+
+                margin: 0px;
+
+                overflow : hidden;
+
+
+                top: 25vh;
+                left: 3vw;
+
+                border-radius: 10px;
+            }
+
+            #controlSection > div{
+                display: flex;
+
+                height: 10%;
+            }
+
+            #controlSection > div > div{
+                width: -webkit-fill-available;
+                height: 100%;
+
+                display: flex;
+
+                justify-content: center;
+                align-items: center;
+            }
+
+            #controlSection > div:nth-child(2){
+                height: 30%;
+            }
+
+            #volumProgress{
+                background-color: #c1c1c1;
+                height: 100%;
+                width: 10%;
+                border-radius: 100px;
+                cursor: pointer;
+            }
+
+            #volumProgress:active{
+                cursor: n-resize;
+            }
+
+            #hiddenController{
+                height: 7vh;
+                width: -webkit-fill-available;
+                bottom: 0px;
+                z-index:1000;
+                position: sticky;
+
+                transition-duration: 0.7s;
+
+                opacity: 0%;
+            }
+
+            #hiddenController:hover{
+                opacity: 100%;
+                background: linear-gradient(0deg, rgb(0 0 0 / 41%) 0%, rgb(0 0 0 / 27%) 34%, rgb(0 0 0 / 1%) 100%);
+            }
+
+            #hiddenController > div:nth-child(n+3){
+                height: 15%;
+                width: 90%;
+
+                left: 5%;
+                bottom: 50%;
+
+                margin: auto;
+                background-color: #ffffff69;
+                border-radius: 100px;
+                position: absolute;
+
+                cursor: pointer;
+            }
+
+            #hiddenController > div:nth-child(n+3):active{
+                cursor: e-resize;
+            }
+            #hiddenController > div:nth-child(4){
+
+                background-color: red;
+                pointer-events: none;
+            }
+
+            #timeChecker{
+                z-index: 100;
+                position: absolute;
+                bottom: 75%;
+                left: 5%;
+                color: white;
+                text-shadow: 0 0 5px #b1b1b1;
+            }
+            #viewTimeChecker{
+                z-index: 100;
+                position: absolute;
+                bottom: 75%;
+                right: 5%;
+                color: white;
+                text-shadow: 0 0 5px #b1b1b1;
+            }
+
+            #videoPanel.fullS{
+                border-radius: 0px;
+            }
+
+            #controlSection > div:nth-child(2) > div:nth-child(2){
+                position: relative;
+            }
+
+            #controlSection > div:nth-child(2) > div:nth-child(2):hover > div{
+                width: 20%;
+            }
+
+            /**
+             * 실제 볼륨 크기
+             */
+            #controlSection > div:nth-child(2) > div:nth-child(2) > div{
+                height: 100%;
+                width: 10%;
+
+                position: absolute;
+                bottom:0px;
+
+                border-radius: 10px;
+            }
+
+            #realVolum{
+                pointer-events: none;
+                background-color: rgb(90,90,90);
+            }
+
+            .descriptionPara{
+                position: fixed;
+                left: 3.2vw;
+                font-size: 0.9;
+            }
+
+            #infoSection{
+                height: 0;
+                width: 0;
+
+                top: 1vh;
+                z-index: 1000;
+                position: relative;
+
+                transition-duration: 0.7s;
+
+                opacity: 0%;
+
+                color: white;
+
+                font-size: 5vh;
+
+                left: 2vw;
+            }
+
+            #infoSection:hover{
+                opacity: 100%;
+            }
+
+            #infoSection.viewInfo{
+                opacity: 100%;
+            }
+
+            #playPauseSection{
+                height: 0;
+                width: 0;
+
+                z-index: 1000;
+                position: relative;
+
+                transition-duration: 0.7s;
+
+                opacity: 0%;
+
+                top: 45%;
+                left: 45%;
+
+                pointer-events: none;
+            }
+
+            #PPICO{
+                height: 10vh;
+                width: 10vh;
+            }
+
+            #PPICO.playICO{
+                background:url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTMsMjJsMCwtMjBsMTgsMTBsLTE4LDEweiIvPgogPC9nPgo8L3N2Zz4=);
+                background-repeat: no-repeat;
+                background-size: cover;
+            }
+            #PPICO.pauseICO{
+                background:url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTExLDIybC00LDBsMCwtMjBsNCwwbDAsMjB6bTYsLTIwbC00LDBsMCwyMGw0LDBsMCwtMjB6Ii8+CiA8L2c+Cjwvc3ZnPg==);
+                background-repeat: no-repeat;
+                background-size: cover;
+            }
+        </style>
+    </head>
+
+
+    <body>
+        <div id="wrapper" class="A1">
+            <div id="vidSelector" class="fullPanel">
+                <div id="selectField">
+                    <div id="selectorText"></div>
+                    <p>영상을 선택하세요</p>
+                    <input onchange="onFileDetected(event)" type="file">
+                </div>
+            </div>
+            <div id="vidViewer" class="fullPanel">
+                <div id="controlSection" class="fixed">
+                    <div>
+                        <div onclick="controller.videoPauseStart()">💧</div>
+                        <div onclick="controller.videoMuteUnmute()">🔊</div>
+                    </div>
+                    <div>
+                        <div onclick="controller.fixController()">🎈</div>
+                        <div>
+                            <div id="volumProgress" onclick="controller.volumeControl(event)" onmousedown="controller.checkVolumControlInteract(event)" onmousemove="controller.checkVolumPosition(event)">
+
+                            </div>
+                            <div id="realVolum">
+
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div onclick="controller.fullscreen()">📺</div>
+                        <div onclick="controller.exitVideo()">👋</div>
+                    </div>
+                    <div>
+                        <div>
+                            <p class="descriptionPara">배속</p>
+                            <input type="text" value="1.0" onkeydown="controller.applyMultiple(event)">
+                        </div>
+                    </div>
+                    <div>
+                        <div>
+                            <p class="descriptionPara">스킵</p>
+                            <input type="text" value="5" onkeydown="vidController.applySkipTime(event)">
+                        </div>
+                    </div>
+                    <div>
+                        <div id="nofityChecker" onclick="controller.toggleNofity(event)">👁‍🗨</div>
+                        <div></div>
+                    </div>
+                </div>
+                <div id="videoPanel">
+                    <div id="infoSection">
+                        <div id="speedInfo">x1.0</div>
+                        <div id="skipInfo">5s</div>
+                    </div>
+                    <div id="playPauseSection">
+                        <div id="PPICO" class="pauseICO"></div>
+                    </div>
+                    <div id="videoSection">
+                        <video id="videoPlayer" oncontextmenu="preventRight(event)" ontimeupdate="timeTransition(event)" onclick="controller.videoPauseStart(event)"></video>
+                    </div>
+                    <div id="hiddenController">
+                        <div id="timeChecker">0:00 | 0:00</div>
+                        <div id="viewTimeChecker">0:00</div>
+                        <div onmousemove="vidController.timelinePointerChanged(event)" onclick="timeSeeker(event)" onmousedown="vidController.checkVidControlInteract(event)"></div>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+            <div id="Settings" class="fullPanel"></div>
+        </div>
+    </body>
+</html>
